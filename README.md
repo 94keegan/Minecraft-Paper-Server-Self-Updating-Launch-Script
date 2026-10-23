@@ -1,0 +1,1 @@
+# Minecraft-Paper-Server-Self-Updating-Launch-Script
