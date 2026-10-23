@@ -1,19 +1,23 @@
-# Minecraft-Paper-Server-Self-Updating-Launch-Script
-Automatically checks for the latest Paper build before starting your Minecraft server.
+# Paper Auto Updater
+
+Automatically updates your PaperMC server to the latest available build before startup.
 
 ## Features
 
-- Checks the PaperMC Downloads API for the latest build
-- Downloads new builds automatically
-- Skips download if the latest build is already installed
-- Removes old Paper JAR files
-- Launches the newest Paper server automatically
+- Automatically checks for new Paper builds
+- Downloads updates only when required
+- Launches the newest Paper server JAR
+- Optional cleanup of old builds
+- Configurable memory allocation
+- Colored PowerShell status messages
+- Error handling for API and download failures
 
 ## Requirements
 
-- Windows 10 / Windows 11
-- PowerShell 5+
-- Java 25+ (required for Minecraft/Paper 26.3)
+- Windows 10 or Windows 11
+- PowerShell 5.1+
+- Java 25 or newer
+- Internet connection for update checks
 
 ## Installation
 
@@ -21,28 +25,62 @@ Automatically checks for the latest Paper build before starting your Minecraft s
    - `StartServer.bat`
    - `Update-Paper.ps1`
 
-2. Place both files in your Paper server folder.
+2. Place both files in your Paper server directory.
 
-3. Edit `Update-Paper.ps1` and set your desired version:
+3. Run:
+
+   ```text
+   StartServer.bat
+   ```
+
+The updater will automatically:
+
+1. Check the PaperMC API
+2. Compare the latest build against local files
+3. Download new builds when available
+4. Remove old builds (optional)
+5. Start the newest server JAR
+
+---
+
+## Configuration
+
+### StartServer.bat
+
+Edit these values to change how much RAM is allocated to your server:
+
+```bat
+set MIN_RAM=4096M
+set MAX_RAM=4096M
+```
+
+Example:
+
+```bat
+set MIN_RAM=8G
+set MAX_RAM=8G
+```
+
+---
+
+### Update-Paper.ps1
+
+Set the Paper version:
 
 ```powershell
-$version = "26.3"
+$Version = "26.3"
 ```
 
-4. Start your server using:
+Enable or disable removal of old JAR files:
 
-```text
-StartServer.bat
+```powershell
+$DeleteOldBuilds = $true
 ```
 
-## How It Works
+Options:
 
-1. Checks the latest available Paper build.
-2. Compares it to local files.
-3. Downloads the newest build if necessary.
-4. Removes older builds.
-5. Starts the newest server JAR.
+```powershell
+$DeleteOldBuilds = $true
+```
 
-## License
-
-MIT License
+Deletes old Paper builds after downloading

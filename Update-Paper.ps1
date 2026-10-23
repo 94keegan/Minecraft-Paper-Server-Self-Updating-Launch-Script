@@ -1,61 +1,90 @@
 # ==========================================
-# Paper Auto-Updater
-# Downloads the latest Paper build if needed
+# Configuration
 # ==========================================
 
-# Minecraft/Paper version
-$version = "26.3"
+$Version = "26.3"
+$DeleteOldBuilds = $true
 
-# User-Agent required by PaperMC API
-$headers = @{
-    "User-Agent" = "PaperAutoUpdater/1.0"
+$Headers = @{
+    "User-Agent" = "PaperAutoUpdater/1.1"
 }
 
-Write-Host "Checking latest Paper build for $version..."
+# ==========================================
+# Check Latest Build
+# ==========================================
 
-# Get version information
-$versionInfo = Invoke-RestMethod `
-    -Headers $headers `
-    -Uri "https://fill.papermc.io/v3/projects/paper/versions/$version"
+Write-Host "[INFO] Checking latest Paper build for $Version..." -ForegroundColor Cyan
 
-# Newest build is first in the list
-$build = $versionInfo.builds[0]
+try {
 
-Write-Host "Latest build: $build"
+    $VersionInfo = Invoke-RestMethod `
+        -Headers $Headers `
+        -Uri "https://fill.papermc.io/v3/projects/paper/versions/$Version"
 
-# Get build details
-$buildInfo = Invoke-RestMethod `
-    -Headers $headers `
-    -Uri "https://fill.papermc.io/v3/projects/paper/versions/$version/builds/$build"
+    $Build = $VersionInfo.builds[0]
 
-$downloadUrl = $buildInfo.downloads."server:default".url
+    Write-Host "[INFO] Latest build: $Build" -ForegroundColor Cyan
 
-if (-not $downloadUrl) {
-    Write-Host "Failed to obtain download URL."
+    $BuildInfo = Invoke-RestMethod `
+        -Headers $Headers `
+        -Uri "https://fill.papermc.io/v3/projects/paper/versions/$Version/builds/$Build"
+
+}
+catch {
+    Write-Host "[ERROR] Failed to contact PaperMC API." -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1
 }
 
-$jarName = Split-Path $downloadUrl -Leaf
+$DownloadUrl = $BuildInfo.downloads."server:default".url
 
-Write-Host "Latest JAR: $jarName"
+if (-not $DownloadUrl) {
+    Write-Host "[ERROR] Failed to obtain download URL." -ForegroundColor Red
+    exit 1
+}
 
-# Download only if not already present
-if (-not (Test-Path $jarName)) {
+$JarName = Split-Path $DownloadUrl -Leaf
 
-    Write-Host "New build detected."
+Write-Host "[INFO] Latest JAR: $JarName" -ForegroundColor Cyan
 
-    # Remove older Paper builds
-    Get-ChildItem "paper-*.jar" -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -ne $jarName } |
-        Remove-Item -Force
+# ==========================================
+# Update Logic
+# ==========================================
 
-    Write-Host "Downloading latest Paper..."
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $jarName
+if (-not (Test-Path $JarName)) {
 
-    Write-Host "Update complete."
+    Write-Host "[INFO] New build detected." -ForegroundColor Yellow
+
+    if ($DeleteOldBuilds) {
+
+        Write-Host "[INFO] Removing old Paper builds..." -ForegroundColor Yellow
+
+        Get-ChildItem "paper-*.jar" -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -ne $JarName } |
+            Remove-Item -Force
+    }
+
+    try {
+
+        Write-Host "[INFO] Downloading latest Paper..." -ForegroundColor Yellow
+
+        Invoke-WebRequest `
+            -Uri $DownloadUrl `
+            -OutFile $JarName
+
+        Write-Host "[SUCCESS] Update complete." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "[ERROR] Download failed." -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        exit 1
+    }
+
 }
 else {
-    Write-Host "Already up to date."
+
+    Write-Host "[SUCCESS] Already up to date." -ForegroundColor Green
+
 }
 
-Write-Host "Done."
+Write-Host "[SUCCESS] Ready to launch." -ForegroundColor Green

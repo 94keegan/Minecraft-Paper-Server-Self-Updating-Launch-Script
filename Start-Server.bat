@@ -2,16 +2,29 @@
 setlocal EnableDelayedExpansion
 
 REM ==========================================
-REM Update Paper before starting the server
+REM Configuration
 REM ==========================================
 
-echo Updating Paper...
+set MIN_RAM=4096M
+set MAX_RAM=4096M
+
+REM ==========================================
+REM Update Paper
+REM ==========================================
+
+echo [INFO] Updating Paper...
 powershell -NoProfile -ExecutionPolicy Bypass -File "Update-Paper.ps1"
+
+if errorlevel 1 (
+    echo [ERROR] Update failed.
+    pause
+    exit /b 1
+)
 
 echo.
 
 REM ==========================================
-REM Find newest downloaded Paper JAR
+REM Find newest Paper JAR
 REM ==========================================
 
 for /f "delims=" %%i in ('dir /b /o-d paper-*.jar') do (
@@ -19,15 +32,15 @@ for /f "delims=" %%i in ('dir /b /o-d paper-*.jar') do (
     goto run
 )
 
-echo No Paper JAR found.
+echo [ERROR] No Paper JAR found.
 pause
 exit /b 1
 
 :run
-echo Starting !JAR!
+echo [INFO] Starting !JAR!
 
-java -Xms4096M -Xmx4096M -jar "!JAR!" --nogui
+java -Xms%MIN_RAM% -Xmx%MAX_RAM% -jar "!JAR!" --nogui
 
 echo.
-echo Server stopped.
+echo [INFO] Server stopped.
 pause
