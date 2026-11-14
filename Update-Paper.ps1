@@ -114,15 +114,20 @@ if (-not (Test-Path $JarName)) {
 
     Write-Host ""
 
-    if ($DeleteOldBuilds) {
+	if ($DeleteOldBuilds) {
 
-        Write-Host "[INFO] Removing old Paper builds..." -ForegroundColor Yellow
+		$OldBuilds = Get-ChildItem "paper-*.jar" -ErrorAction SilentlyContinue |
+			Where-Object { $_.Name -ne $JarName }
 
-        Get-ChildItem "paper-*.jar" -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -ne $JarName } |
-            Remove-Item -Force
+		if ($OldBuilds) {
 
-    }
+			Write-Host "[INFO] Removing old Paper builds..." -ForegroundColor Yellow
+
+			$OldBuilds | Remove-Item -Force
+
+		}
+
+	}
 
     try {
 
