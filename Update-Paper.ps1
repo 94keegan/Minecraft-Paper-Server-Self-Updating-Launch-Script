@@ -63,37 +63,56 @@ try {
 
     $Build = $VersionInfo.builds[0]
 
-    Write-Host "[INFO] Latest build: $Build" -ForegroundColor Cyan
-
     $BuildInfo = Invoke-RestMethod `
         -Headers $Headers `
         -Uri "https://fill.papermc.io/v3/projects/paper/versions/$Version/builds/$Build"
 
 }
 catch {
+
     Write-Host "[ERROR] Failed to contact PaperMC API." -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1
+
 }
 
 $DownloadUrl = $BuildInfo.downloads."server:default".url
 
 if (-not $DownloadUrl) {
+
     Write-Host "[ERROR] Failed to obtain download URL." -ForegroundColor Red
     exit 1
+
 }
 
 $JarName = Split-Path $DownloadUrl -Leaf
 
-Write-Host "[INFO] Latest JAR: $JarName" -ForegroundColor Cyan
+# ==========================================
+# Detect Current Installed Version
+# ==========================================
 
-# ==========================================
-# Update Logic
-# ==========================================
+$CurrentJar = Get-ChildItem "paper-*.jar" -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1
+
+Write-Host ""
+
+if ($CurrentJar) {
+    Write-Host "[INFO] Installed JAR: $($CurrentJar.Name)" -ForegroundColor Cyan
+}
+else {
+    Write-Host "[INFO] Installed JAR: None Found" -ForegroundColor Yellow
+}
+
+Write-Host "[INFO] Latest JAR: $JarName" -ForegroundColor Cyan
 
 if (-not (Test-Path $JarName)) {
 
-    Write-Host "[INFO] New build detected." -ForegroundColor Yellow
+    if ($CurrentJar) {
+        Write-Host "[INFO] Updating from: $($CurrentJar.Name) -> $JarName" -ForegroundColor Yellow
+    }
+
+    Write-Host ""
 
     if ($DeleteOldBuilds) {
 
@@ -102,6 +121,7 @@ if (-not (Test-Path $JarName)) {
         Get-ChildItem "paper-*.jar" -ErrorAction SilentlyContinue |
             Where-Object { $_.Name -ne $JarName } |
             Remove-Item -Force
+
     }
 
     try {
@@ -113,19 +133,24 @@ if (-not (Test-Path $JarName)) {
             -OutputFile $JarName
 
         Write-Host "[SUCCESS] Update complete." -ForegroundColor Green
+
     }
     catch {
+
         Write-Host ""
         Write-Host "[ERROR] Download failed." -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
         exit 1
+
     }
 
 }
 else {
 
+    Write-Host ""
     Write-Host "[SUCCESS] Already up to date." -ForegroundColor Green
 
 }
 
+Write-Host ""
 Write-Host "[SUCCESS] Ready to launch." -ForegroundColor Green
